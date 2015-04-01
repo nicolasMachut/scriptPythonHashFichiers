@@ -1,27 +1,38 @@
 #!/usr/bin/python
 __author__ = 'nicolas'
+
+# imports
 import os
 import hashlib
 import pymongo
 import sys
 
+# constants fields
+EXCLUSION_FILE = "exclusion.conf"
+SERVER_PATH = "/home/nicolas/testPython"
+LOG_FILE = "hashTP.log"
+
+# mongodb database connection
 connection = pymongo.Connection()
 db = connection["HASHTP"]
 hashs = db["hashs"]
 
-# fichier d'exclusion
-fichier = open("exclusion.conf", "r")
-excludedFolders = fichier.readlines()
-print("%s Fichiers exclu du check" %len(excludedFolders))
 
-for folder in excludedFolders:
-    print(folder.rstrip('\n\r'))
-
-fichier.close()
+# open log file
+logFile = open(LOG_FILE, "w");
 
 
-path = "/home/nicolas/testPython"
-print("\n")
+def getExcludedDirectories():
+    # get excluded directories from exclusion.conf
+    file = open(EXCLUSION_FILE, "r")
+    lines = file.readlines()
+    print("%s Fichiers exclu du check" % len(lines))
+    excludedDirectories = []
+    for folder in lines:
+        excludedDirectories.append(folder.rstrip('\n\r'))
+        print(folder.rstrip('\n\r'))
+    file.close()
+    return excludedDirectories
 
 def fileToSha1(filePath):
     BLOCKSIZE = 65536
@@ -33,16 +44,24 @@ def fileToSha1(filePath):
             buf = afile.read(BLOCKSIZE)
     return hasher.hexdigest()
 
+def log (message):
+    logFile.write(message + "\n")
+    print(message)
+
+
+excludedDirectories = getExcludedDirectories()
+
 args = sys.argv
 if len(args) > 1 and args[1] == "check":
     db.hashs.remove()
+    path = SERVER_PATH
     for path, dirs, files in os.walk(path):
         for filename in files:
             filePath = path + "/" + filename
             fileSha1 = fileToSha1(filePath)
             hashs.insert({"path": filePath, "hash": fileSha1})
 else:
-    path = "/home/nicolas/testPython"
+    path = SERVER_PATH
     countModifiedFiles = 0
     countAddedFiles = 0
     for path, dirs, files in os.walk(path):
@@ -52,14 +71,17 @@ else:
             result = db.hashs.find({"path": filePath})
 
             if result.count() == 0:
-                print("%s à été ajouté" %filePath)
+                log("%s à été ajouté" %filePath)
                 countAddedFiles += 1
             else:
                 hashFoundInBdd = result[0]["hash"]
                 if hashFoundInBdd != fileSha1:
                     countModifiedFiles += 1
-                    print("%s à été modifié" %filePath)
+                    log("%s à été modifié" %filePath)
 
-    print("\n")
-    print("%s fichier(s) modfié(s)" %countModifiedFiles)
-    print("%s fichier(s) ajouté(s)" %countAddedFiles)
+    log("%s fichier(s) modfié(s)" %countModifiedFiles)
+    log("%s fichier(s) ajouté(s)" %countAddedFiles)
+
+
+# close log file
+logFile.close()
