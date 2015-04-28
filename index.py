@@ -64,6 +64,7 @@ def log (message):
     print(message)
 
 
+
 excludedDirectories = getExcludedDirectories()
 
 args = sys.argv
