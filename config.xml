@@ -1,0 +1,9 @@
+<config>
+    <exclusions>
+        <directory>test</directory>
+        <directory>test2</directory>
+        <directory>yo</directory>
+    </exclusions>
+
+    <delayInSeconds>60</delayInSeconds>
+</config>

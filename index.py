@@ -6,9 +6,11 @@ import os
 import hashlib
 import pymongo
 import sys
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 
 # constants fields
-EXCLUSION_FILE = "exclusion.conf"
+CONFIG_FILE = "config.xml"
 SERVER_PATH = "/home/nicolas/testPython"
 LOG_FILE = "hashTP.log"
 
@@ -19,20 +21,33 @@ hashs = db["hashs"]
 
 
 # open log file
-logFile = open(LOG_FILE, "w");
+logFile = open(LOG_FILE, "w")
+
 
 
 def getExcludedDirectories():
-    # get excluded directories from exclusion.conf
-    file = open(EXCLUSION_FILE, "r")
-    lines = file.readlines()
-    print("%s Fichiers exclu du check" % len(lines))
-    excludedDirectories = []
-    for folder in lines:
-        excludedDirectories.append(folder.rstrip('\n\r'))
-        print(folder.rstrip('\n\r'))
-    file.close()
-    return excludedDirectories
+    # get excluded directories from config.xml
+    print("Charging configuration file")
+
+    tree = ET.parse(CONFIG_FILE)
+    root = tree.getroot()
+    for neighbor in root.iter('directory'):
+        print(neighbor.attrib)
+
+    # doc = minidom.parse(CONFIG_FILE)
+    # if doc.hasChildNodes():
+    #     for element in doc.getElementsByTagName('directory'):
+    #         print(element.value())
+    #
+    # file = open(CONFIG_FILE, "r")
+    # lines = file.readlines()
+    # print("%s Fichiers exclu du check" % len(lines))
+    # excludedDirectories = []
+    # for folder in lines:
+    #     excludedDirectories.append(folder.rstrip('\n\r'))
+    #     print(folder.rstrip('\n\r'))
+    # file.close()
+    # return excludedDirectories
 
 def fileToSha1(filePath):
     BLOCKSIZE = 65536
